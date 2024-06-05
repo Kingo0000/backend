@@ -1,18 +1,12 @@
-var express = require('express');
+var express = require("express");
 var router = express.Router();
-const multer = require("multer");
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./uploads/"); // Specify the directory for storing uploaded files
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // Generate a unique filename
-  },
-});
-const upload = multer({ storage: storage });
-const path = require("path");
+const cloudinary = require("cloudinary").v2;
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 /* GET home page. */
 router.get("/", async (req, res, next) => {
@@ -26,10 +20,27 @@ router.get("/", async (req, res, next) => {
 });
 
 
-router.post("/news", upload.single("image"), async (req, res) => {
+router.post("/news", async (req, res) => {
   const { headline, summary, youtube } = req.body;
-  const image = req.file ? `/uploads/${req.file.filename}` : null;
-  const author = "KingDavid"
+  const author = "KingDavid";
+
+  let image = null;
+
+  // Upload image if present
+  if (req.files && req.files.image) {
+    try {
+      const result = await cloudinary.uploader.upload(
+        req.files.image.tempFilePath,
+        {
+          folder: "news_images", // Optional: folder name in Cloudinary
+        }
+      );
+      image = result.secure_url;
+    } catch (error) {
+      console.error("Error uploading image:", error.message);
+      return res.status(500).json({ error: "Error uploading image" });
+    }
+  }
 
   try {
     await req.db("custom_news").insert({
@@ -37,7 +48,7 @@ router.post("/news", upload.single("image"), async (req, res) => {
       summary,
       image,
       youtube,
-      author
+      author,
     });
 
     res.status(200).json({ message: "News added successfully" });
@@ -46,6 +57,7 @@ router.post("/news", upload.single("image"), async (req, res) => {
     res.status(500).json({ error: "Error adding news" });
   }
 });
+
 
 router.get("/home", function (req, res, next) {
   res.send("welcome o");
