@@ -1,12 +1,13 @@
 const fs = require("fs");
 const express = require("express");
+const fileUpload = require("express-fileupload");
 const path = require("path");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const multer = require("multer");
 const logger = require("morgan");
 const knexConfig = require("./database");
 const knex = require("knex")(knexConfig["development"]);
+const cloudinary = require("cloudinary").v2;
 
 // Ensure the uploads directory exists
 const uploadsDir = path.join(__dirname, "uploads");
@@ -14,16 +15,12 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadsDir); // Use the uploads directory
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname)); // Generate a unique filename
-  },
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const upload = multer({ storage: storage });
 
 knex
   .raw("SELECT 1")
@@ -48,7 +45,12 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Credentials", true);
   next();
 });
-
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  })
+);
 app.use(bodyParser.json());
 app.use(logger("dev"));
 app.use(express.json());
