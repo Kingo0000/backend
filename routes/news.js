@@ -19,9 +19,8 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-
 router.post("/news", async (req, res) => {
-  const { headline, summary, youtube } = req.body;
+  const { headline, summary, youtube, section } = req.body;
   const author = "Ladi Patrick";
 
   let image = null;
@@ -48,6 +47,7 @@ router.post("/news", async (req, res) => {
       summary,
       image,
       youtube,
+      section, // Include section in the insert query
       author,
     });
 
@@ -57,7 +57,6 @@ router.post("/news", async (req, res) => {
     res.status(500).json({ error: "Error adding news" });
   }
 });
-
 
 router.get("/home", function (req, res, next) {
   res.send("welcome o");
