@@ -22,7 +22,7 @@ router.get("/", async (req, res, next) => {
 
 router.post("/news", async (req, res) => {
   const { headline, summary, youtube } = req.body;
-  const author = "KingDavid";
+  const author = "Ladi Patrick";
 
   let image = null;
 
